@@ -77,16 +77,35 @@ function extractImdbId($: cheerio.CheerioAPI): string | null {
 }
 
 function extractLetterboxdId($: cheerio.CheerioAPI): number {
-    let posterElement = $('div[data-resolvable-poster-path]').first();
-    let film_id = posterElement.attr('data-resolvable-poster-path');
+    const posterElement = $('div[data-resolvable-poster-path]').first();
+    const filmIdAttribute = posterElement.attr('data-resolvable-poster-path');
 
     try {
-        film_id = JSON.parse(film_id || '{}');
-        film_id = film_id.postered.uid;
-        film_id = film_id.replace(/^film:/, '');
-        return parseInt(film_id, 10);
-    }
-    catch (error) {
+        const parsedFilmData: unknown = JSON.parse(filmIdAttribute || '{}');
+        if (
+            typeof parsedFilmData !== 'object' ||
+            parsedFilmData === null ||
+            !('postered' in parsedFilmData)
+        ) {
+            throw new Error('Missing `postered` field in resolvable poster data.');
+        }
+        const postedData = parsedFilmData.postered;
+        if (
+            typeof postedData !== 'object' ||
+            postedData === null ||
+            !('uid' in postedData) ||
+            typeof postedData.uid !== 'string'
+        ) {
+            throw new Error('Missing `postered.uid` string in resolvable poster data.');
+        }
+        const filmUid = postedData.uid.replace(/^film:/, '');
+        const filmId = parseInt(filmUid, 10);
+        if (!Number.isInteger(filmId)) {
+            logger.error('Extracted Letterboxd ID is not a valid integer.', { film_id });
+            throw new Error('Extracted Letterboxd ID is not a valid integer.');
+        }
+        return filmId;
+    } catch (error) {
         logger.error('Failed to extract Letterboxd ID from HTML. This could be due to an unexpected HTML structure or missing data.', { error });
         throw new Error('Failed to extract Letterboxd ID from HTML.');
     }
