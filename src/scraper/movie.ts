@@ -101,7 +101,7 @@ function extractLetterboxdId($: cheerio.CheerioAPI): number {
         const filmUid = postedData.uid.replace(/^film:/, '');
         const filmId = parseInt(filmUid, 10);
         if (!Number.isInteger(filmId)) {
-            logger.error('Extracted Letterboxd ID is not a valid integer.', { film_id });
+            logger.error('Extracted Letterboxd ID is not a valid integer.', { filmId });
             throw new Error('Extracted Letterboxd ID is not a valid integer.');
         }
         return filmId;
